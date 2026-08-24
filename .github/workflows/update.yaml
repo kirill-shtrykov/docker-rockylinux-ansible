@@ -1,0 +1,60 @@
+name: Update Rocky Linux base images
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - version: "9"
+            dir: rocky-9
+          - version: "10"
+            dir: rocky-10
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Get latest Rocky Linux version
+        id: version
+        run: |
+          VERSION=$(curl -s "https://hub.docker.com/v2/repositories/rockylinux/rockylinux/tags?page_size=100&name=${{ matrix.version }}." \
+            | jq -r '.results[].name' \
+            | grep -E '^${{ matrix.version }}\.[0-9]+$' \
+            | sort -V \
+            | tail -1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update Dockerfile
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i \
+            -e "s|^FROM rockylinux/rockylinux:${{ matrix.version }}\(\.[0-9]*\)\?$|FROM rockylinux/rockylinux:${VERSION}|" \
+            -e "s|^ENV IMAGE_VERSION=.*$|ENV IMAGE_VERSION=${VERSION}|" \
+            ${{ matrix.dir }}/Dockerfile
+
+      - name: Check for changes
+        id: changed
+        run: |
+          if git diff --quiet ${{ matrix.dir }}/Dockerfile; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.changed.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: update/rocky-${{ matrix.version }}
+          commit-message: "Update Rocky Linux ${{ matrix.version }} to ${{ steps.version.outputs.version }}"
+          title: "Update Rocky Linux ${{ matrix.version }} to ${{ steps.version.outputs.version }}"
+          delete-branch: true

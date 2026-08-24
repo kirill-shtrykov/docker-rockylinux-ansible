@@ -1,0 +1,112 @@
+name: Publish Docker images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "rocky-*/**"
+  workflow_dispatch:
+
+jobs:
+  changes:
+    name: Detect changed images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Build matrix
+        id: matrix
+        run: |
+          latest_dir=$(find . -maxdepth 1 -type d -name 'rocky-[0-9]*' | sort -t- -k2 -V | tail -1)
+          latest_version=$(basename "$latest_dir" | sed 's/rocky-//')
+
+          before="${{ github.event.before }}"
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            echo "No before SHA — including all Rocky Linux images"
+            changed_dirs=$(find . -maxdepth 1 -type d -name 'rocky-[0-9]*' | sort -t- -k2 -V)
+          else
+            changed_dirs=$(git diff --name-only "$before" "${{ github.sha }}" \
+              | grep '^rocky-[0-9]' \
+              | cut -d/ -f1 \
+              | sort -u)
+          fi
+
+          matrix=$(echo "$changed_dirs" | while read -r dir; do
+            [ -z "$dir" ] && continue
+            version=$(basename "$dir" | sed 's/rocky-//')
+            path="./$dir"
+            image_version=$(grep '^ENV IMAGE_VERSION=' "$path/Dockerfile" | cut -d= -f2)
+            is_latest=$([ "$version" = "$latest_version" ] && echo "true" || echo "false")
+            echo "{\"version\":\"$version\",\"path\":\"$path\",\"image_version\":\"$image_version\",\"latest\":$is_latest}"
+          done | jq -sc '{"include": .}')
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish Rocky Linux ${{ matrix.version }}
+    needs: changes
+    if: ${{ needs.changes.outputs.matrix != '' && needs.changes.outputs.matrix != '{"include":[]}' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix: ${{ fromJson(needs.changes.outputs.matrix) }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_LOGIN }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: kirillshtrykov/rockylinux-ansible
+          tags: |
+            type=raw,value=${{ matrix.image_version }}
+            type=raw,value=${{ matrix.version }}
+            type=raw,value=latest,enable=${{ matrix.latest }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.path }}
+          file: ${{ matrix.path }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Create Git tag
+        run: |
+          tag="rocky-${{ matrix.image_version }}"
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists, skipping"
+          else
+            git tag "$tag"
+            git push origin "$tag"
+          fi
+
+      - name: Create GitHub release
+        run: |
+          tag="rocky-${{ matrix.image_version }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists, skipping"
+          else
+            gh release create "$tag" --generate-notes --title "Rocky Linux ${{ matrix.image_version }}"
+          fi
