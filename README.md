@@ -6,7 +6,11 @@
 Rocky Linux Docker container for Ansible roles testing.
 
 ## Tags
-- [`9.3`, `latest`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/main/Dockerfile)
+- [`10`, `10.2`, `latest`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-10.2/rocky-10/Dockerfile)
+- [`10.0`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-10.0/rocky-10/Dockerfile)
+- [`9`, `9.8`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-9.8/rocky-9/Dockerfile)
+- [`9.3`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/9.3/Dockerfile)
+- [`9.0`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-9.0/rocky-9/Dockerfile)
 
 ## Usage
 ```bash
@@ -18,5 +22,5 @@ If you find a bug or have an idea for a feature, feel free to write an
 [issue](https://github.com/kirill-shtrykov/rockylinux-ansible/issues) or make a PR.
 
 ## See Also
-- Docker Hub: [kirillshtrykov/rockylinux-ansible](https://hub.docker.com/repository/docker/kirillshtrykov/rockylinux-ansible)
+- Docker Hub: [kirillshtrykov/rockylinux-ansible](https://hub.docker.com/r/kirillshtrykov/rockylinux-ansible)
 - Github: [kirill-shtrykov/docker-rockylinux-ansible](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/)
