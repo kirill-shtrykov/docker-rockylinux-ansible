@@ -1,6 +1,6 @@
-FROM rockylinux/rockylinux:9.8
+FROM rockylinux/rockylinux:9.9
 
-ENV IMAGE_VERSION=9.8
+ENV IMAGE_VERSION=9.9
 
 LABEL maintainer="Kirill Shtrykov" \
       org.opencontainers.image.version=${IMAGE_VERSION} \
