@@ -9,7 +9,7 @@ Rocky Linux Docker container for Ansible roles testing.
 - [`10`, `10.3`, `latest`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-10.3/rocky-10/Dockerfile)
 - [`10`, `10.2`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-10.2/rocky-10/Dockerfile)
 - [`10.0`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-10.0/rocky-10/Dockerfile)
-- [`9`, `9.9`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-9.8/rocky-9/Dockerfile)
+- [`9`, `9.9`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-9.9/rocky-9/Dockerfile)
 - [`9`, `9.8`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-9.8/rocky-9/Dockerfile)
 - [`9.3`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/9.3/Dockerfile)
 - [`9.0`](https://github.com/kirill-shtrykov/docker-rockylinux-ansible/blob/rocky-9.0/rocky-9/Dockerfile)
